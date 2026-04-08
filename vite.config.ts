@@ -57,7 +57,7 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     proxy: {
       "/ml-api": {
-        target: "http://127.0.0.1:8000",
+        target: "https://attendance-ml-api-8sqi.onrender.com",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/ml-api/, ""),
       },
