@@ -104,7 +104,7 @@ date,day_of_week,week_number,month,is_holiday,is_festival,festival_weight,festiv
 13-Apr-26,1,16,4,0,0,0,
 14-Apr-26,2,16,4,0,0,0,
 15-Apr-26,3,16,4,0,0,0,
-16-Apr-26,4,16,4,1,0,0,
+16-Apr-26,4,16,4,0,0,0,
 17-Apr-26,5,16,4,0,0,0,
 18-Apr-26,6,16,4,0,0,0,
 19-Apr-26,0,17,4,1,0,0,
