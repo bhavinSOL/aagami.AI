@@ -1,6 +1,7 @@
 // CSV Service - Fetches real data from attendance.csv and 2026_calander.csv
 
 import { API_BASE } from '@/lib/network';
+import { predictByMonth } from '@/lib/apiService';
 
 // Helper: format Date to YYYY-MM-DD using local time (avoids UTC shift from toISOString)
 export function toLocalDateStr(d: Date): string {
@@ -124,7 +125,7 @@ export async function fetchCalendarCSV(): Promise<CalendarRow[]> {
 export async function fetchDayPrediction(dateStr: string): Promise<number | null> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000); // 5s timeout
+    const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout (increased from 5s)
     const res = await fetch(`${API_BASE}/predict/day?date=${dateStr}`, { signal: controller.signal });
     clearTimeout(timeout);
     if (!res.ok) throw new Error(`predict/day failed: ${res.status}`);
@@ -139,10 +140,13 @@ export async function fetchDayPrediction(dateStr: string): Promise<number | null
 // Fetch predicted values for a date range from your API
 async function fetchRangePrediction(startDate: string, endDate: string): Promise<Record<string, number>> {
   try {
-    const res = await fetch(`${API_BASE}/predict/range?start_date=${startDate}&end_date=${endDate}`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000); // 20s timeout (increased)
+    const res = await fetch(`${API_BASE}/predict/range?start_date=${startDate}&end_date=${endDate}`, { signal: controller.signal });
+    clearTimeout(timeout);
     if (!res.ok) throw new Error(`predict/range failed: ${res.status}`);
     const data: Array<{ date: string; predicted_absentees_percentage: string }> = await res.json();
-    
+
     const map: Record<string, number> = {};
     data.forEach(item => {
       map[item.date] = parseFloat(item.predicted_absentees_percentage.replace('%', ''));
@@ -235,52 +239,114 @@ export async function getDailyChartData(viewDate: Date): Promise<ChartData[]> {
   return chartData;
 }
 
-// Prepare WEEKLY chart data
+// Prepare WEEKLY chart data - Show all weeks of the current month
 export async function getWeeklyChartData(viewDate: Date): Promise<ChartData[]> {
   const attendance = await fetchAttendanceCSV();
-  
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
-  // Determine current week's Sunday start
-  const currentWeekStart = new Date(today);
-  currentWeekStart.setDate(today.getDate() - today.getDay());
-  currentWeekStart.setHours(0, 0, 0, 0);
-  const currentWeekStartStr = toLocalDateStr(currentWeekStart);
-  
-  // Show 6 weeks before and 6 weeks after viewDate
+
+  // Get all weeks in the viewed month
+  const monthStart = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1);
+  const monthEnd = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0);
+
+  // Find the Sunday of the week containing the first day of month
+  const firstWeekStart = new Date(monthStart);
+  firstWeekStart.setDate(monthStart.getDate() - monthStart.getDay());
+
+  // Find the Saturday of the week containing the last day of month
+  const lastWeekEnd = new Date(monthEnd);
+  lastWeekEnd.setDate(monthEnd.getDate() + (6 - monthEnd.getDay()));
+
   const chartData: ChartData[] = [];
-  
-  for (let i = -6; i <= 6; i++) {
-    const weekStart = new Date(viewDate);
-    weekStart.setDate(viewDate.getDate() + (i * 7));
-    // Align to Sunday (start of week)
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-    
+  let weekNum = 1;
+
+  // Iterate through all weeks in and around this month
+  for (let current = new Date(firstWeekStart); current <= lastWeekEnd; current.setDate(current.getDate() + 7)) {
+    const weekStart = new Date(current);
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
-    
+
     const weekStartStr = toLocalDateStr(weekStart);
     const weekEndStr = toLocalDateStr(weekEnd);
-    
+
     // Calculate actual average from attendance.csv for this week
     const weekRows = attendance.filter(row => {
-      return row.date >= weekStartStr && row.date <= weekEndStr && 
+      return row.date >= weekStartStr && row.date <= weekEndStr &&
              row.absent_percent !== null && !isNaN(row.absent_percent) &&
-             row.absent_percent < 50; // Filter out holidays (90%+ values)
+             row.absent_percent < 50;
     });
-    
+
     const hasActual = weekRows.length > 0 && weekStart <= today;
-    const actualAvg = hasActual 
+    const actualAvg = hasActual
       ? Math.round((weekRows.reduce((sum, r) => sum + (r.absent_percent || 0), 0) / weekRows.length) * 100) / 100
       : 0;
-    
-    // Only predict for the current week — don't go far into the future
-    const isCurrentWeek = weekStartStr === currentWeekStartStr;
-    const predicted = isCurrentWeek ? await fetchWeekPrediction(weekStartStr) : 0;
-    
-    const label = `Week ${weekStartStr}`;
-    
+
+    // Get prediction for all weeks in current month (not just current week)
+    let predicted = 0;
+    try {
+      predicted = await fetchWeekPrediction(weekStartStr);
+    } catch {
+      predicted = 0;
+    }
+
+    const label = `Week ${weekNum}`;
+
+    chartData.push({
+      date: label,
+      absenteeism: actualAvg,
+      actual: hasActual ? actualAvg : 0,
+      predicted: predicted,
+    });
+
+    weekNum++;
+  }
+
+  return chartData;
+}
+
+// Prepare MONTHLY chart data - Show previous, current, and next month
+export async function getMonthlyChartData(viewDate: Date): Promise<ChartData[]> {
+  const attendance = await fetchAttendanceCSV();
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const chartData: ChartData[] = [];
+
+  // Show 3 months: previous, current, and next
+  for (let i = -1; i <= 1; i++) {
+    const monthDate = new Date(viewDate);
+    monthDate.setMonth(viewDate.getMonth() + i);
+
+    const year = monthDate.getFullYear();
+    const month = monthDate.getMonth() + 1;
+    const monthStr = `${year}-${month.toString().padStart(2, '0')}`;
+
+    // Calculate actual average from attendance.csv for this month
+    const monthRows = attendance.filter(row => {
+      return row.date.startsWith(monthStr) &&
+             row.absent_percent !== null && !isNaN(row.absent_percent) &&
+             row.absent_percent < 50; // Filter out holidays
+    });
+
+    const hasActual = monthRows.length > 0 && monthDate <= today;
+    const actualAvg = hasActual
+      ? Math.round((monthRows.reduce((sum, r) => sum + (r.absent_percent || 0), 0) / monthRows.length) * 100) / 100
+      : 0;
+
+    // Get prediction for all 3 months (previous, current, next)
+    let predicted = 0;
+    try {
+      const predictions = await predictByMonth(year, month);
+      predicted = parseFloat(predictions.average_month_absentees_percentage.replace('%', ''));
+    } catch {
+      predicted = 0;
+    }
+
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const label = `${monthNames[month - 1]} ${year}`;
+
     chartData.push({
       date: label,
       absenteeism: actualAvg,
@@ -288,50 +354,9 @@ export async function getWeeklyChartData(viewDate: Date): Promise<ChartData[]> {
       predicted: predicted,
     });
   }
-  
+
   return chartData;
 }
-
-// Prepare MONTHLY chart data
-export async function getMonthlyChartData(viewDate: Date): Promise<ChartData[]> {
-  const attendance = await fetchAttendanceCSV();
-  
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const currentYear = today.getFullYear();
-  const currentMonth = today.getMonth() + 1;
-  
-  const chartData: ChartData[] = [];
-  
-  // Show 6 months before and 6 months after viewDate
-  for (let i = -6; i <= 6; i++) {
-    const monthDate = new Date(viewDate);
-    monthDate.setMonth(viewDate.getMonth() + i);
-    
-    const year = monthDate.getFullYear();
-    const month = monthDate.getMonth() + 1;
-    const monthStr = `${year}-${month.toString().padStart(2, '0')}`;
-    
-    // Calculate actual average from attendance.csv for this month
-    const monthRows = attendance.filter(row => {
-      return row.date.startsWith(monthStr) && 
-             row.absent_percent !== null && !isNaN(row.absent_percent) &&
-             row.absent_percent < 50; // Filter out holidays
-    });
-    
-    const hasActual = monthRows.length > 0 && monthDate <= today;
-    const actualAvg = hasActual
-      ? Math.round((monthRows.reduce((sum, r) => sum + (r.absent_percent || 0), 0) / monthRows.length) * 100) / 100
-      : 0;
-    
-    // Only predict for the current month — don't go far into the future
-    const isCurrentMonth = year === currentYear && month === currentMonth;
-    const predicted = isCurrentMonth ? await fetchMonthPrediction(year, month) : 0;
-    
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const label = `${monthNames[month - 1]} ${year}`;
-    
     chartData.push({
       date: label,
       absenteeism: actualAvg,
