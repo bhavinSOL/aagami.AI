@@ -69,7 +69,7 @@ export function invalidateCalendarCache() { _calendarCache = null; }
 export async function fetchAttendanceCSV(): Promise<AttendanceRow[]> {
   if (_attendanceCache) return _attendanceCache;
   try {
-    const response = await fetch('/attendance.csv');
+    const response = await fetch('https://raw.githubusercontent.com/bhavinSOL/TATA-Attendance/refs/heads/main/public/attendance.csv');
     if (!response.ok) throw new Error(`Failed to fetch attendance.csv: ${response.status}`);
     
     const text = await response.text();
@@ -105,7 +105,7 @@ export async function fetchAttendanceCSV(): Promise<AttendanceRow[]> {
 export async function fetchCalendarCSV(): Promise<CalendarRow[]> {
   if (_calendarCache) return _calendarCache;
   try {
-    const response = await fetch('/2026_calander.csv');
+    const response = await fetch('https://raw.githubusercontent.com/bhavinSOL/TATA-Attendance/refs/heads/main/public/2026_calander.csv');
     if (!response.ok) throw new Error(`Failed to fetch 2026_calander.csv: ${response.status}`);
     
     const text = await response.text();
