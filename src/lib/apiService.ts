@@ -102,11 +102,26 @@ export const predictAllWeeksInMonth = async (year: number, month: number): Promi
   return weeks;
 };
 
-/** Predict all 12 months of a year via /predict/month (parallel). */
+/** Predict all 12 months of a year via /predict/month (sequential). */
 export const predictAllMonthsInYear = async (year: number): Promise<MonthSummary[]> => {
-  const results = await Promise.all(
-    Array.from({ length: 12 }, (_, i) => predictByMonth(year, i + 1))
-  );
+  const results: MonthPredictionResponse[] = [];
+
+  // Fetch months sequentially (one by one) to avoid cancellations
+  for (let i = 1; i <= 12; i++) {
+    try {
+      const result = await predictByMonth(year, i);
+      results.push(result);
+    } catch (err) {
+      console.warn(`Failed to fetch month ${i}:`, err);
+      // Add empty result to maintain order
+      results.push({
+        year,
+        month: i,
+        average_month_absentees_percentage: '0%'
+      });
+    }
+  }
+
   return results.map((r, i) => ({
     month: i + 1,
     monthName: MONTH_SHORT[i],
