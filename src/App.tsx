@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Predictions from "./pages/Predictions";
 import Calendar from "./pages/Calendar";
 import Notifications from "./pages/Notifications";
+import Tutorial from "./pages/Tutorial";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import ChatWidget from "./components/ChatWidget";
@@ -40,6 +41,7 @@ const AppRoutes = () => {
       <Route path="/predictions" element={<ProtectedRoute><Predictions /></ProtectedRoute>} />
       <Route path="/calendar" element={<ProtectedRoute><Calendar /></ProtectedRoute>} />
       <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+      <Route path="/tutorial" element={<ProtectedRoute><Tutorial /></ProtectedRoute>} />
       <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
