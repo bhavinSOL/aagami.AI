@@ -7,6 +7,7 @@ const allNavItems = [
   { path: '/predictions', label: 'Predictions', icon: TrendingUp, adminOnly: false },
   { path: '/calendar', label: 'Calendar', icon: Calendar, adminOnly: false },
   { path: '/notifications', label: 'Notifications', icon: Bell, adminOnly: false },
+  { path: '/tutorial', label: 'Tutorial', icon: FileText, adminOnly: false },
   { path: '/admin', label: 'Admin Panel', icon: Settings, adminOnly: true },
 ];
 
