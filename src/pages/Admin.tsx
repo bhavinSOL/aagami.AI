@@ -555,11 +555,11 @@ const Admin = () => {
                   <Cloud className="h-4 w-4 text-primary" /> Vercel Deploy
                 </h3>
                 <ol className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
-                  <li>Code ko GitHub repo me push karein.</li>
-                  <li>Vercel Dashboard me New Project choose karein.</li>
-                  <li>GitHub repo import karein and framework as Vite detect hone dein.</li>
-                  <li>Build command: npm run build, Output: dist set karein.</li>
-                  <li>Deploy click karein aur generated URL verify karein.</li>
+                  <li>Push your code to a GitHub repository.</li>
+                  <li>In the Vercel dashboard, choose New Project.</li>
+                  <li>Import the GitHub repository and let Vercel detect Vite automatically.</li>
+                  <li>Set the build command to npm run build and output directory to dist.</li>
+                  <li>Click Deploy and verify the generated URL.</li>
                 </ol>
               </div>
 
@@ -568,11 +568,11 @@ const Admin = () => {
                   <Rocket className="h-4 w-4 text-primary" /> Render Deploy
                 </h3>
                 <ol className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
-                  <li>Render me New + se Static Site create karein.</li>
-                  <li>GitHub repository connect karein.</li>
-                  <li>Build command: npm install ; npm run build use karein.</li>
-                  <li>Publish directory: dist set karein.</li>
-                  <li>Auto Deploy enable karke production URL test karein.</li>
+                  <li>In Render, use New + to create a Static Site.</li>
+                  <li>Connect your GitHub repository.</li>
+                  <li>Use npm install ; npm run build as the build command.</li>
+                  <li>Set the publish directory to dist.</li>
+                  <li>Enable Auto Deploy and test the production URL.</li>
                 </ol>
               </div>
 
@@ -581,11 +581,11 @@ const Admin = () => {
                   <Github className="h-4 w-4 text-primary" /> GitHub Workflow
                 </h3>
                 <ol className="list-decimal pl-5 space-y-2 text-sm text-muted-foreground">
-                  <li>Feature branch banayein aur changes commit karein.</li>
-                  <li>Pull Request raise karke review approvals lein.</li>
-                  <li>PR merge hone ke baad deployment trigger check karein.</li>
-                  <li>GitHub Actions logs me build success confirm karein.</li>
-                  <li>Release notes me latest portal updates document karein.</li>
+                  <li>Create a feature branch and commit your changes.</li>
+                  <li>Open a Pull Request and collect review approvals.</li>
+                  <li>After merging the PR, check that deployment is triggered.</li>
+                  <li>Confirm build success in GitHub Actions logs.</li>
+                  <li>Document the latest portal updates in release notes.</li>
                 </ol>
               </div>
             </div>
