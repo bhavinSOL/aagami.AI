@@ -261,7 +261,7 @@ date,day_of_week,week_number,month,is_holiday,is_festival,festival_weight,festiv
 17-Sep-26,4,38,9,0,0,0,
 18-Sep-26,5,38,9,0,0,0,
 19-Sep-26,6,38,9,0,0,0,
-20-Sep-26,0,39,9,1,0,0,
+20-Sep-26,0,39,9,0,0,0,
 21-Sep-26,1,39,9,0,0,0,
 22-Sep-26,2,39,9,0,0,0,
 23-Sep-26,3,39,9,0,0,0,
